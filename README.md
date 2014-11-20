@@ -9,7 +9,15 @@ Originally built to handle bad response from the ASP.NET MVC API assuming that t
 
 Though it can be adopted in any server side technology given that the bad validation response will return an object of the same structure as MVC's ModelState object.
 
+Installation:
+-------------
+*Reference module in your app*
+```
+angular.module('app', ['server-validate']);
+```
+
 Example:
+-------------
 
 **ASP.NET MVC API Action Result:**
 ```
