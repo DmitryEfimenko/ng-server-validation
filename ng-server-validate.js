@@ -34,7 +34,7 @@
   * }
 */
 
-angular.module('app.directives')
+angular.module('server-validate')
     .directive('serverValidate', [
         function() {
             return {
