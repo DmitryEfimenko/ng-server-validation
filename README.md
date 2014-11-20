@@ -2,10 +2,12 @@ ng-server-validation
 ====================
 
 Provides easy hooks for server side validation on AngularJs apps.
-Set of directives to ease up displaying of the server side validation errors to the user
+
+Set of directives to ease up displaying of the server side validation errors to the user.
+
 Originally built to handle bad response from the ASP.NET MVC API assuming that the ModelState object was passed.
-However it can be adopted in any server side technology given that the bad validation response will return
-an object of the same structure as MVC's ModelState object.
+
+Though it can be adopted in any server side technology given that the bad validation response will return an object of the same structure as MVC's ModelState object.
 
 Example:
 
