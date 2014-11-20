@@ -21,6 +21,8 @@ Example:
 
 **ASP.NET MVC API Action Result:**
 ```
+// 1-st parameter: the name of the input that is being invalidated
+// 2-nd parameter: the name of the error parameter to invalidate (note: not the error message!)
 ModelState.AddModelError("email", "wrongEmailFormat");
 return BadRequest(ModelState);
 ```
