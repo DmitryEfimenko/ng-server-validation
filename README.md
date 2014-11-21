@@ -9,6 +9,8 @@ Originally built to handle bad response from the ASP.NET MVC API assuming that t
 
 Though it can be adopted in any server side technology given that the bad validation response will return an object of the same structure as MVC's ModelState object.
 
+In case server adds a ModelState error with a property name that does not have a corresponding input, the error will be placed under `formName.$serverErrors.propertyName` (see example below)
+
 Installation:
 -------------
 *Reference module in your app*
@@ -24,6 +26,7 @@ Example:
 // 1-st parameter: the name of the input that is being invalidated
 // 2-nd parameter: the name of the error parameter to invalidate (note: not the error message!)
 ModelState.AddModelError("email", "wrongEmailFormat");
+ModelState.AddModelError("general", "generalError"); // the 'general' property does not have a corresponding input
 return BadRequest(ModelState);
 ```
 
@@ -34,6 +37,9 @@ return BadRequest(ModelState);
     <div ng-messages="myForm.email.$error" ng-show="myForm.email.$dirty">
         <div ng-message="required">Email address is required</div>
         <div ng-message="server_wrongEmailFormat">This email address is incorrect</div>
+    </div>
+    <div ng-messages="myForm.$serverErrors.general">
+        <div ng-message="server_generalError">Server is completely broke!</div>
     </div>
     <button type="submit">Submit</button>
 </form>
