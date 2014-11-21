@@ -14,19 +14,6 @@
   * ModelState.AddModelError("general", "generalError"); // the 'general' property does not have a corresponding input
   * return BadRequest(ModelState);
   *
-  * index.html:
-  * <form name="myForm" ng-submit="submitMyForm()" server-validate novalidate>
-  *     <input type="text" name="email" ng-model="email" required>
-  *     <div ng-messages="myForm.email.$error" ng-show="myForm.email.$dirty">
-  *         <div ng-message="required">Email address is required</div>
-  *         <div ng-message="server_wrongEmailFormat">This email address is incorrect</div>
-  *     </div>
-  *     <div ng-messages="myForm.$serverErrors.general">
-  *         <div ng-message="server_generalError">Server is completely broke!</div>
-  *     </div>
-  *     <button type="submit">Submit</button>
-  * </form>
-  *
   * index.js - inside Controller:
   * $scope.submitMyForm = function() {
   *     $http.post('/api/Email/Add', { email: $scope.email }).then(
@@ -38,6 +25,19 @@
   *         }
   *     );
   * }
+  *
+  * index.html:
+  * <form name="myForm" ng-submit="submitMyForm()" server-validate novalidate>
+  *     <input type="text" name="email" ng-model="email" required>
+  *     <div ng-messages for="myForm.email.$error" ng-show="myForm.email.$dirty">
+  *         <div ng-message when="required">Email address is required</div>
+  *         <div ng-message when="server_wrongEmailFormat">This email address is incorrect</div>
+  *     </div>
+  *     <div ng-messages for="myForm.$serverErrors.general">
+  *         <div ng-message when="server_generalError">Server is completely broke!</div>
+  *     </div>
+  *     <button type="submit">Submit</button>
+  * </form>
 */
 
 angular.module('server-validate')
