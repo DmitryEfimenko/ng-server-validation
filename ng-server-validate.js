@@ -63,8 +63,11 @@ angular.module('server-validate')
                                 } else {
                                     // there is no input associated with provided property
                                     // TODO: not sure how to handle this scenario 
-                                    // the problem is that submit button gets disabled if form is invalid
-                                    // watchOnce() allows to set input valid if changed. However, in this case watchOnce cannot be applied, so the form will always be invalid
+                                    // the problem is that user usually disables submit button if form is invalid.
+                                    // WatchOnce() allows to set input valid if changed. However, in this case watchOnce
+                                    // cannot be applied (since there is no input for the property), so the form will always be invalid.
+                                    // Most likely we'll need to create a separate property on the $form - an array of errors that do not
+                                    // invalidate the form, and create a directive that will show these errors on the page.
 
                                     //for (var j = 0, jl = $scope.modelState[property].length; j < jl; j++) {
                                     //    $form.$setValidity('server_' + $scope.modelState[property][j], false);
