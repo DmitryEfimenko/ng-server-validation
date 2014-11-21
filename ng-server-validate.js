@@ -21,7 +21,7 @@
   *         <div ng-message="required">Email address is required</div>
   *         <div ng-message="server_wrongEmailFormat">This email address is incorrect</div>
   *     </div>
-  *     <div ng-messages="myForm.$serverErrors.general" ng-show="myForm.email.$dirty">
+  *     <div ng-messages="myForm.$serverErrors.general">
   *         <div ng-message="server_generalError">Server is completely broke!</div>
   *     </div>
   *     <button type="submit">Submit</button>
