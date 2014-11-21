@@ -41,7 +41,7 @@
   * </form>
 */
 
-angular.module('server-validate')
+angular.module('server-validate', [])
     .directive('serverValidate', [
         function() {
             return {
