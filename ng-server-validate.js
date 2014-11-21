@@ -1,12 +1,13 @@
 'use strict';
 
 /*
-  * Set of directives to ease up displaying of the server side validation errors to the user
+  * Source: https://github.com/DmitryEfimenko/ng-server-validation
+  * A directive to ease up displaying of the server side validation errors to the user.
   * Originally built to handle bad response from the ASP.NET MVC API assuming that the ModelState object was passed.
   * However it can be adopted in any server side technology given that the bad validation response will return
   * an object of the same structure as MVC's ModelState object.
   * In case server adds a ModelState error with a property name that does not have a corresponding input,
-  * the error will be placed under `formName.$serverErrors.propertyName`
+  * the error will be placed under `formName.$serverErrors.propertyName` (see example below)
   *
   * Example:
   * ASP.NET MVC API Action Result:
