@@ -5,10 +5,13 @@
   * Originally built to handle bad response from the ASP.NET MVC API assuming that the ModelState object was passed.
   * However it can be adopted in any server side technology given that the bad validation response will return
   * an object of the same structure as MVC's ModelState object.
+  * In case server adds a ModelState error with a property name that does not have a corresponding input,
+  * the error will be placed under `formName.$serverErrors.propertyName`
   *
   * Example:
   * ASP.NET MVC API Action Result:
   * ModelState.AddModelError("email", "wrongEmailFormat");
+  * ModelState.AddModelError("general", "generalError"); // the 'general' property does not have a corresponding input
   * return BadRequest(ModelState);
   *
   * index.html:
@@ -17,6 +20,9 @@
   *     <div ng-messages="myForm.email.$error" ng-show="myForm.email.$dirty">
   *         <div ng-message="required">Email address is required</div>
   *         <div ng-message="server_wrongEmailFormat">This email address is incorrect</div>
+  *     </div>
+  *     <div ng-messages="myForm.$serverErrors.general" ng-show="myForm.email.$dirty">
+  *         <div ng-message="server_generalError">Server is completely broke!</div>
   *     </div>
   *     <button type="submit">Submit</button>
   * </form>
@@ -62,24 +68,25 @@ angular.module('server-validate')
                                     watchOnce(property);
                                 } else {
                                     // there is no input associated with provided property
-                                    // TODO: not sure how to handle this scenario 
-                                    // the problem is that user usually disables submit button if form is invalid.
-                                    // WatchOnce() allows to set input valid if changed. However, in this case watchOnce
-                                    // cannot be applied (since there is no input for the property), so the form will always be invalid.
-                                    // Most likely we'll need to create a separate property on the $form - an array of errors that do not
-                                    // invalidate the form, and create a directive that will show these errors on the page.
+                                    $form.$serverErrors = {};
+                                    $form.$serverErrors[property] = {};
+                                    for (var j = 0, jl = $scope.modelState[property].length; j < jl; j++) {
+                                        $form.$serverErrors[property]['server_' + $scope.modelState[property][j]] = true;
+                                    }
 
-                                    //for (var j = 0, jl = $scope.modelState[property].length; j < jl; j++) {
-                                    //    $form.$setValidity('server_' + $scope.modelState[property][j], false);
-                                    //}
+                                    angular.element($elem).on('submit', clearGeneralServerErrors);
                                 }
                             }
                         }
-                        
 
                         if (foundErrors)
                             $form.$setDirty();
                     });
+
+                    function clearGeneralServerErrors() {
+                        $form.$serverErrors = null;
+                        angular.element($elem).off('submit', clearGeneralServerErrors);
+                    }
 
                     function watchOnce(property) {
                         watchingProps.push(property);
