@@ -35,7 +35,7 @@ return BadRequest(ModelState);
 $scope.submitMyForm = function() {
   $http.post('/api/Email/Add', { email: $scope.email }).then(
     function(response) {
-      no errors - do whatever you need to do
+      // no errors - do whatever you need to do
     },
     function(error) {
       $scope.modelState = error.data.modelState;
