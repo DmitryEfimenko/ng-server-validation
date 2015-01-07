@@ -43,39 +43,65 @@
 
 angular.module('server-validate', [])
     .directive('serverValidate', [
-        function() {
+        function () {
             return {
                 restrict: 'A',
                 require: 'form',
-                link: function($scope, $elem, $attrs, $form) {
+                link: function ($scope, $elem, $attrs, $form) {
                     var watchingProps = [];
 
-                    $scope.$watch('modelState', function() {
+                    var errorFormat = $attrs.serverValidate;
+
+                    $scope.$watch('modelState', function () {
                         // clear all modelState errors from form
                         clearServerErrors();
 
                         var foundErrors = false;
 
-                        for (var property in $scope.modelState) {
-                            if ($scope.modelState.hasOwnProperty(property)) {
+                        if (errorFormat && errorFormat == 'Microsoft.Owin') {
+                            // expecting server response like: { error: '[inputName]', error_description: '[errorType]' }
+                            // example: { error: 'password', error_description: 'invalid' }
+                            if ($scope.modelState) {
                                 foundErrors = true;
-
-                                if ($form[property]) {
-                                    $form[property].$dirty = true;
-                                    $form[property].$pristine = false;
-                                    for (var i = 0, l = $scope.modelState[property].length; i < l; i++) {
-                                        $form[property].$setValidity('server_' + $scope.modelState[property][i], false);
-                                    }
-                                    watchOnce(property);
+                                var inputName = $scope.modelState.error;
+                                var errorType = $scope.modelState.error_description;
+                                console.log(errorType);
+                                if ($form[inputName]) {
+                                    $form[inputName].$dirty = true;
+                                    $form[inputName].$pristine = false;
+                                    $form[inputName].$setValidity('server_' + errorType, false);
+                                    watchOnce(inputName);
                                 } else {
-                                    // there is no input associated with provided property
                                     $form.$serverErrors = {};
-                                    $form.$serverErrors[property] = {};
-                                    for (var j = 0, jl = $scope.modelState[property].length; j < jl; j++) {
-                                        $form.$serverErrors[property]['server_' + $scope.modelState[property][j]] = true;
-                                    }
-
+                                    $form.$serverErrors[inputName] = {};
+                                    $form.$serverErrors[inputName]['server_' + errorType] = true;
                                     angular.element($elem).on('submit', clearGeneralServerErrors);
+                                }
+                            }
+                        } else {
+                            // expecting server response like: { [inputName]: '['[errorType]']..', error_description: '' }
+                            // example: { password: ['invalid', 'maxlength'], email: ['required'] }
+                            for (var property in $scope.modelState) {
+                                if ($scope.modelState.hasOwnProperty(property)) {
+                                    foundErrors = true;
+
+                                    if ($form[property]) {
+                                        $form[property].$dirty = true;
+                                        $form[property].$pristine = false;
+                                        for (var i = 0, l = $scope.modelState[property].length; i < l; i++) {
+                                            $form[property].$setValidity('server_' + $scope.modelState[property][i], false);
+                                        }
+                                        watchOnce(property);
+                                    } else {
+                                        // there is no input associated with provided property
+                                        $form.$serverErrors = {};
+                                        $form.$serverErrors[property] = {};
+                                        for (var j = 0, jl = $scope.modelState[property].length; j < jl; j++) {
+                                            $form.$serverErrors[property]['server_' + $scope.modelState[property][j]] = true;
+                                        }
+
+                                        angular.element($elem).on('submit', clearGeneralServerErrors);
+                                    }
                                 }
                             }
                         }
@@ -122,4 +148,3 @@ angular.module('server-validate', [])
             };
         }
     ]);
-    
