@@ -18,6 +18,35 @@ Installation:
 angular.module('app', ['server-validate']);
 ```
 
+Supported Server Response Types:
+-------------
+**ModelState**
+* use directive `server-validate` on your `form` element
+* set error in your controller Action:
+```
+ModelState.AddModelError("password", "invalid");
+ModelState.AddModelError("password", "maxlength");
+ModelState.AddModelError("email", "required");
+```
+response will look like this:
+```
+{
+  password: ['invalid', 'maxlength'],
+  email: ['required']
+}
+```
+
+**Microsoft.Owin**
+* use directive `server-validate="Microsoft.Owin"` on your `form` element
+* set error in your `ApplicationOAuthProvider`:
+```
+context.SetError("password", "invalid");
+```
+response will look like this:
+```
+{ error: 'password', error_description: 'invalid' }
+```
+
 Example:
 -------------
 
