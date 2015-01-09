@@ -31,8 +31,11 @@ ModelState.AddModelError("email", "required");
 response will look like this:
 ```
 {
-  password: ['invalid', 'maxlength'],
-  email: ['required']
+  message: "The request is invalid.",
+  modelState: {
+    password: ['invalid', 'maxlength'],
+    email: ['required']
+  }
 }
 ```
 
