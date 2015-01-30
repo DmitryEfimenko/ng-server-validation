@@ -2,18 +2,31 @@
 
 /*
   * Source: https://github.com/DmitryEfimenko/ng-server-validation
-  * A directive to ease up displaying of the server side validation errors to the user.
+  * Set of directives to ease up displaying of the server side validation errors to the user
   * Originally built to handle bad response from the ASP.NET MVC API assuming that the ModelState object was passed.
   * However it can be adopted in any server side technology given that the bad validation response will return
   * an object of the same structure as MVC's ModelState object.
   * In case server adds a ModelState error with a property name that does not have a corresponding input,
-  * the error will be placed under `formName.$serverErrors.propertyName` (see example below)
+  * the error will be placed under `formName.$serverErrors.propertyName`
   *
   * Example:
   * ASP.NET MVC API Action Result:
   * ModelState.AddModelError("email", "wrongEmailFormat");
   * ModelState.AddModelError("general", "generalError"); // the 'general' property does not have a corresponding input
   * return BadRequest(ModelState);
+  *
+  * index.html:
+  * <form name="myForm" ng-submit="submitMyForm()" server-validate novalidate>
+  *     <input type="text" name="email" ng-model="email" required>
+  *     <div ng-messages="myForm.email.$error" ng-show="myForm.email.$dirty">
+  *         <div ng-message="required">Email address is required</div>
+  *         <div ng-message="wrongEmailFormat">This email address is incorrect</div>
+  *     </div>
+  *     <div ng-messages="myForm.$serverErrors.general" ng-show="myForm.email.$dirty">
+  *         <div ng-message="generalError">Server is completely broke!</div>
+  *     </div>
+  *     <button type="submit">Submit</button>
+  * </form>
   *
   * index.js - inside Controller:
   * $scope.submitMyForm = function() {
@@ -26,35 +39,68 @@
   *         }
   *     );
   * }
-  *
-  * index.html:
-  * <form name="myForm" ng-submit="submitMyForm()" server-validate novalidate>
-  *     <input type="text" name="email" ng-model="email" required>
-  *     <div ng-messages for="myForm.email.$error" ng-show="myForm.email.$dirty">
-  *         <div ng-message when="required">Email address is required</div>
-  *         <div ng-message when="server_wrongEmailFormat">This email address is incorrect</div>
-  *     </div>
-  *     <div ng-messages for="myForm.$serverErrors.general">
-  *         <div ng-message when="server_generalError">Server is completely broke!</div>
-  *     </div>
-  *     <button type="submit">Submit</button>
-  * </form>
 */
 
-angular.module('server-validate', [])
-    .directive('serverValidate', [
-        function () {
+angular.module('server-validate')
+    .service('serverValidateService', [function () {
+        var watchingFieldNames = [];
+        var self = this;
+
+        self.clearServerError = function (form, fieldName) {
+            if (form[fieldName]) {
+                for (var errorFieldName in form[fieldName].$error) {
+                    if (form[fieldName].$error.hasOwnProperty(errorFieldName)) {
+                        form[fieldName].$setValidity(errorFieldName, true);
+                    }
+                }
+                // make sure that clearing server side validation does not interfere with client side validation:
+                form[fieldName].$validate();
+            }
+            var fieldNameIndex = watchingFieldNames.indexOf(fieldName);
+            if (fieldNameIndex > -1) watchingFieldNames.splice(fieldNameIndex, 1);
+        };
+
+        self.clearServerErrors = function (form) {
+            for (var i = 0, l = watchingFieldNames.length; i < l; i++) {
+                self.clearServerError(form, watchingFieldNames[i]);
+            }
+        };
+
+        self.watchOnce = function (form, fieldName) {
+            watchingFieldNames.push(fieldName);
+
+            form[fieldName].$viewChangeListeners.push(addChangeListener);
+
+            function addChangeListener() {
+                self.clearServerError(form, fieldName);
+                var listenerIndex = form[fieldName].$viewChangeListeners.indexOf(addChangeListener);
+                if (listenerIndex > -1)
+                    form[fieldName].$viewChangeListeners.splice(listenerIndex, 1);
+            }
+        };
+
+        self.addError = function (form, fieldName, validationProperty) {
+            if (form[fieldName]) {
+                form[fieldName].$setValidity(validationProperty, false);
+                self.watchOnce(form, fieldName);
+            } else {
+                console.log('error on serverValidateService.setServerValidity(): there is no input with name="' + fieldName + '" in the form');
+            }
+        };
+    }])
+    .directive('serverValidate', ['serverValidateService',
+        function (serverValidateService) {
             return {
                 restrict: 'A',
                 require: 'form',
                 link: function ($scope, $elem, $attrs, $form) {
-                    var watchingProps = [];
 
                     var errorFormat = $attrs.serverValidate;
+                    $form.$serverErrors = {};
 
-                    $scope.$watch('modelState', function () {
+                    $scope.$watch('modelState', function() {
                         // clear all modelState errors from form
-                        clearServerErrors();
+                        serverValidateService.clearServerErrors($form);
 
                         var foundErrors = false;
 
@@ -65,39 +111,37 @@ angular.module('server-validate', [])
                                 foundErrors = true;
                                 var inputName = $scope.modelState.error;
                                 var errorType = $scope.modelState.error_description;
-                                console.log(errorType);
+
                                 if ($form[inputName]) {
                                     $form[inputName].$dirty = true;
                                     $form[inputName].$pristine = false;
-                                    $form[inputName].$setValidity('server_' + errorType, false);
-                                    watchOnce(inputName);
+                                    $form[inputName].$setValidity(errorType, false);
+                                    serverValidateService.watchOnce($form, inputName);
                                 } else {
-                                    $form.$serverErrors = {};
-                                    $form.$serverErrors[inputName] = {};
-                                    $form.$serverErrors[inputName]['server_' + errorType] = true;
+                                    if (!$form.$serverErrors[inputName]) $form.$serverErrors[inputName] = {};
+                                    $form.$serverErrors[inputName][errorType] = true;
                                     angular.element($elem).on('submit', clearGeneralServerErrors);
                                 }
                             }
                         } else {
-                            // expecting server response like: { [inputName]: '['[errorType]']..', error_description: '' }
+                            // expecting server response like: { '[inputName1]': ['[errorType1]', '[errorType2]'], '[inputName2]': ['[errorType3]', '[errorType4]'], ... }
                             // example: { password: ['invalid', 'maxlength'], email: ['required'] }
-                            for (var property in $scope.modelState) {
-                                if ($scope.modelState.hasOwnProperty(property)) {
+                            for (var fieldName in $scope.modelState) {
+                                if ($scope.modelState.hasOwnProperty(fieldName)) {
                                     foundErrors = true;
 
-                                    if ($form[property]) {
-                                        $form[property].$dirty = true;
-                                        $form[property].$pristine = false;
-                                        for (var i = 0, l = $scope.modelState[property].length; i < l; i++) {
-                                            $form[property].$setValidity('server_' + $scope.modelState[property][i], false);
+                                    if ($form[fieldName]) {
+                                        $form[fieldName].$dirty = true;
+                                        $form[fieldName].$pristine = false;
+                                        for (var i = 0, l = $scope.modelState[fieldName].length; i < l; i++) {
+                                            $form[fieldName].$setValidity($scope.modelState[fieldName][i], false);
                                         }
-                                        watchOnce(property);
+                                        serverValidateService.watchOnce($form, fieldName);
                                     } else {
-                                        // there is no input associated with provided property
-                                        $form.$serverErrors = {};
-                                        $form.$serverErrors[property] = {};
-                                        for (var j = 0, jl = $scope.modelState[property].length; j < jl; j++) {
-                                            $form.$serverErrors[property]['server_' + $scope.modelState[property][j]] = true;
+                                        // there is no input associated with provided fieldName
+                                        if (!$form.$serverErrors[fieldName]) $form.$serverErrors[fieldName] = {};
+                                        for (var j = 0, jl = $scope.modelState[fieldName].length; j < jl; j++) {
+                                            $form.$serverErrors[fieldName][$scope.modelState[fieldName][j]] = true;
                                         }
 
                                         angular.element($elem).on('submit', clearGeneralServerErrors);
@@ -111,38 +155,8 @@ angular.module('server-validate', [])
                     });
 
                     function clearGeneralServerErrors() {
-                        $form.$serverErrors = null;
+                        $form.$serverErrors = {};
                         angular.element($elem).off('submit', clearGeneralServerErrors);
-                    }
-
-                    function watchOnce(property) {
-                        watchingProps.push(property);
-                        $form[property].$viewChangeListeners.push(addChangeListener);
-
-                        function addChangeListener() {
-                            clearServerError(property);
-                            var listenerIndex = $form[property].$viewChangeListeners.indexOf(addChangeListener);
-                            if (listenerIndex > -1)
-                                $form[property].$viewChangeListeners.splice(listenerIndex, 1);
-                        }
-                    }
-
-                    function clearServerError(property) {
-                        if ($form[property]) {
-                            for (var errorProperty in $form[property].$error) {
-                                if ($form[property].$error.hasOwnProperty(errorProperty) && errorProperty.substring(0, 7) == 'server_') {
-                                    $form[property].$setValidity(errorProperty, true);
-                                }
-                            }
-                        }
-                        var propertyIndex = watchingProps.indexOf(property);
-                        if (propertyIndex > -1) watchingProps.splice(propertyIndex, 1);
-                    }
-
-                    function clearServerErrors() {
-                        for (var i = 0, l = watchingProps.length; i < l; i++) {
-                            clearServerError(watchingProps[i]);
-                        }
                     }
                 }
             };
