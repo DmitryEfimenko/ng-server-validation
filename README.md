@@ -82,10 +82,10 @@ $scope.submitMyForm = function() {
     <input type="text" name="email" ng-model="email" required>
     <div ng-messages for="myForm.email.$error" ng-show="myForm.email.$dirty">
         <div ng-message when="required">Email address is required</div>
-        <div ng-message when="server_wrongEmailFormat">This email address is incorrect</div>
+        <div ng-message when="wrongEmailFormat">This email address is incorrect</div>
     </div>
     <div ng-messages for="myForm.$serverErrors.general">
-        <div ng-message when="server_generalError">Server is completely broke!</div>
+        <div ng-message when="generalError">Server is completely broke!</div>
     </div>
     <button type="submit">Submit</button>
 </form>
