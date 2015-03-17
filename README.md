@@ -14,7 +14,7 @@ In case server adds a ModelState error with a property name that does not have a
 Installation:
 -------------
 *Reference module in your app*
-```
+```JavaScript
 angular.module('app', ['server-validate']);
 ```
 
@@ -23,13 +23,13 @@ Supported Server Response Types:
 **ModelState**
 * use directive `server-validate` on your `form` element
 * set error in your controller Action:
-```
+```C#
 ModelState.AddModelError("password", "invalid");
 ModelState.AddModelError("password", "maxlength");
 ModelState.AddModelError("email", "required");
 ```
 response will look like this:
-```
+```C#
 {
   message: "The request is invalid.",
   modelState: {
@@ -42,11 +42,11 @@ response will look like this:
 **Microsoft.Owin**
 * use directive `server-validate="Microsoft.Owin"` on your `form` element
 * set error in your `ApplicationOAuthProvider`:
-```
+```C#
 context.SetError("password", "invalid");
 ```
 response will look like this:
-```
+```C#
 { error: 'password', error_description: 'invalid' }
 ```
 
@@ -54,7 +54,7 @@ Example:
 -------------
 
 **ASP.NET MVC API Action Result:**
-```
+```C#
 // 1-st parameter: the name of the input that is being invalidated
 // 2-nd parameter: the name of the error parameter to invalidate (note: not the error message!)
 ModelState.AddModelError("email", "wrongEmailFormat");
@@ -63,7 +63,7 @@ return BadRequest(ModelState);
 ```
 
 **index.js - inside Controller:**
-```
+```JavaScript
 $scope.submitMyForm = function() {
   $http.post('/api/Email/Add', { email: $scope.email }).then(
     function(response) {
@@ -77,7 +77,7 @@ $scope.submitMyForm = function() {
 ```
 
 **index.html:**
-```
+```HTML
 <form name="myForm" ng-submit="submitMyForm()" server-validate novalidate>
     <input type="text" name="email" ng-model="email" required>
     <div ng-messages for="myForm.email.$error" ng-show="myForm.email.$dirty">
