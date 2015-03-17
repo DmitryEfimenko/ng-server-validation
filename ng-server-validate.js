@@ -41,7 +41,7 @@
   * }
 */
 
-angular.module('server-validate')
+angular.module('server-validate', [])
     .service('serverValidateService', [function () {
         var watchingFieldNames = [];
         var self = this;
